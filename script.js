@@ -1,12 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
-    // --- Configurações Corrigidas do Relatório ---
-    // A URL que você forneceu: "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9"
-    // A API JavaScript funciona melhor com o ID do relatório e o ID do grupo (workspace ) separados.
-    // Essas informações estão codificadas na URL acima.
-    
-    const embedUrl = "https://app.powerbi.com/reportEmbed"; // URL base correta para a API
-    const reportId = "1eb00da9-4050-4c21-bdcd-50b7e64384e7"; // Extraído da sua URL
-    const groupId = "3cc4605c-becb-4fa8-b2ec-9aca6c0f219a"; // Extraído da sua URL
+    // --- Configurações do Relatório (Versão 3 - Simplificada e Corrigida) ---
+    // Usando a URL de "view" diretamente, que é o método correto para "Publicar na Web".
+    const embedUrl = "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9";
     const targetPageName = "Print";
 
     // --- Elementos do DOM ---
@@ -17,25 +12,33 @@ document.addEventListener("DOMContentLoaded", function() {
     const models = window['powerbi-client'].models;
     const config = {
         type: 'report',
+        // Para "Publicar na Web", o tokenType é Embed. Não precisamos de accessToken.
         tokenType: models.TokenType.Embed,
         embedUrl: embedUrl,
-        id: reportId,
-        groupId: groupId,
-        permissions: models.Permissions.All, // Permissões para interagir
         settings: {
             panes: {
-                filters: { visible: false },
-                pageNavigation: { visible: true, position: models.PageNavigationPosition.Bottom }
+                filters: {
+                    visible: false
+                },
+                // Garante que a navegação entre páginas do Power BI esteja visível na parte inferior.
+                pageNavigation: {
+                    visible: true,
+                    position: models.PageNavigationPosition.Bottom
+                }
             }
         }
     };
 
-    // --- Embutir o relatório ---
+    // --- Embutir o relatório no contêiner ---
     const report = powerbi.embed(reportContainer, config);
 
-    // --- Lógica do Botão (mesma lógica de antes, mas agora deve funcionar) ---
+    // --- Lógica para o botão de Download ---
+
+    // 1. Ouvir o evento 'pageChanged'
     report.on('pageChanged', function(event) {
         const page = event.detail.newPage;
+        console.log("Página alterada para:", page.displayName); // Log para depuração
+
         if (page.displayName === targetPageName) {
             downloadButton.style.display = 'flex';
         } else {
@@ -43,30 +46,57 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // 2. Evento de clique no botão de download
     downloadButton.addEventListener('click', function() {
-        html2canvas(document.querySelector("#reportContainer iframe"), { // Captura diretamente o iframe
+        console.log("Iniciando captura de tela...");
+        
+        // Seleciona o iframe dentro do reportContainer para a captura
+        const reportIframe = reportContainer.querySelector('iframe');
+
+        if (!reportIframe) {
+            alert("Erro: O iframe do relatório não foi encontrado para a captura.");
+            return;
+        }
+
+        html2canvas(reportIframe, {
             useCORS: true,
-            allowTaint: true
+            allowTaint: true,
+            logging: true // Ativa logs do html2canvas para ajudar a depurar
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = 'captura-relatorio.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
         }).catch(error => {
-            console.error("Erro ao capturar a tela:", error);
-            alert("Ocorreu um erro ao tentar gerar a imagem.");
+            console.error("Erro ao usar html2canvas:", error);
+            alert("Ocorreu um erro ao tentar gerar a imagem. Verifique o console para mais detalhes.");
         });
     });
 
+    // 3. Garante que o estado inicial do botão está correto após o relatório carregar
     report.on('rendered', async function() {
         try {
-            const activePage = await report.getActivePage();
-            if (activePage.displayName === targetPageName) {
-                downloadButton.style.display = 'flex';
+            // Verifica se o relatório realmente carregou antes de tentar obter a página
+            if (report.iframe) {
+                const pages = await report.getPages();
+                if (pages.length > 0) {
+                    const activePage = pages.find(p => p.isActive);
+                    if (activePage && activePage.displayName === targetPageName) {
+                        downloadButton.style.display = 'flex';
+                    }
+                }
             }
         } catch (error) {
-            console.error("Erro ao verificar página ativa:", error);
+            console.error("Erro ao obter página ativa na renderização:", error);
         }
     });
+
+    // 4. Adiciona um listener para erros de embed
+    report.off("error"); // Limpa listeners de erro anteriores
+    report.on("error", function(event) {
+        console.error("Erro ao embutir o relatório do Power BI:", event.detail);
+        alert("Não foi possível carregar o relatório do Power BI. Verifique se o link de publicação está correto e ativo.");
+    });
 });
+
 
