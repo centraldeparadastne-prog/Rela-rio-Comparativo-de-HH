@@ -1,81 +1,62 @@
-// Aguarda o carregamento completo da janela, incluindo todos os scripts.
-window.onload = function() {
-    // DEIXE ESTA LINHA COMO ESTÁ POR ENQUANTO. VAMOS AJUSTAR DEPOIS.
-    const targetPageName = "Print"; 
+document.addEventListener("DOMContentLoaded", function() {
+    // --- Configurações ---
+    const baseUrl = "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9";
+    const printPageId = "0a22b9e9f0966a5ee76d"; // O ID INTERNO que você forneceu!
 
-    const reportIframe = document.getElementById('reportIframe');
+    // --- Elementos ---
+    const reportContainer = document.getElementById('reportContainer' );
     const downloadButton = document.getElementById('downloadButton');
 
-    if (!reportIframe || !downloadButton) {
-        console.error("Elemento essencial (iframe ou botão) não encontrado.");
-        return;
+    // --- Lógica Principal ---
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = params.get('page');
+
+    let embedUrl;
+
+    // Se a URL do navegador tiver "?page=print", monte a URL do Power BI para a página específica
+    if (pageParam === 'print') {
+        embedUrl = `${baseUrl}&pageName=${printPageId}`;
+        downloadButton.style.display = 'flex'; // Mostra o botão imediatamente
+    } else {
+        // Caso contrário, use a URL base (página inicial do relatório)
+        embedUrl = baseUrl;
+        downloadButton.style.display = 'none'; // Garante que o botão esteja oculto
     }
 
-    const report = powerbi.get(reportIframe);
-
-    if (!report) {
-        console.error("Não foi possível obter o controle do relatório do Power BI.");
-        return;
-    }
-
-    const checkActivePage = async (page) => {
-        // Se a função for chamada sem um objeto 'page', busca a página ativa.
-        let currentPage = page;
-        if (!currentPage) {
-            try {
-                const pages = await report.getPages();
-                currentPage = pages.find(p => p.isActive);
-            } catch (error) {
-                console.error("Erro ao buscar páginas:", error);
-                return; // Sai da função se não conseguir buscar as páginas
-            }
-        }
-
-        if (currentPage) {
-            // !!! PONTO DE DEBURAÇÃO !!!
-            // Este alerta vai mostrar o nome exato da página atual.
-            alert("Você está na página: '" + currentPage.displayName + "'");
-
-            if (currentPage.displayName === targetPageName) {
-                downloadButton.style.display = 'flex';
-            } else {
-                downloadButton.style.display = 'none';
+    // --- Configuração e Carregamento do Power BI ---
+    const models = window['powerbi-client'].models;
+    const config = {
+        type: 'report',
+        tokenType: models.TokenType.Embed,
+        embedUrl: embedUrl,
+        settings: {
+            panes: {
+                filters: { visible: false },
+                pageNavigation: { visible: true, position: models.PageNavigationPosition.Bottom }
             }
         }
     };
 
-    // --- Event Listeners ---
+    // Carrega o relatório
+    const report = powerbi.embed(reportContainer, config);
 
-    // Quando o relatório terminar de renderizar, chama a função para a página inicial.
-    report.on('rendered', () => checkActivePage());
-
-    // Quando o usuário mudar de página, o objeto 'page' é passado pelo evento.
-    report.on('pageChanged', (event) => checkActivePage(event.detail.newPage));
-
-    // Ação de clique no botão de download (sem alterações)
+    // --- Ação de Download ---
     downloadButton.addEventListener('click', function() {
-        console.log("Botão de download clicado.");
-        if (window.html2canvas) {
-            html2canvas(reportIframe, {
-                logging: true,
-                useCORS: true,
-                allowTaint: true
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'captura-relatorio.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }).catch(error => {
-                console.error("Erro na captura com html2canvas:", error);
-                alert("Ocorreu um erro ao gerar a imagem.");
-            });
-        } else {
-            alert("A biblioteca de captura de tela não foi carregada.");
+        const reportIframe = reportContainer.querySelector('iframe');
+        if (reportIframe && window.html2canvas) {
+            html2canvas(reportIframe, { useCORS: true, allowTaint: true, logging: true })
+                .then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'captura-relatorio.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                })
+                .catch(error => {
+                    console.error("Erro na captura:", error);
+                    alert("Ocorreu um erro ao gerar a imagem.");
+                });
         }
     });
+});
 
-    report.on("error", function(event) {
-        console.error("Power BI Error:", event.detail);
-    });
-};
 
