@@ -1,27 +1,25 @@
-/* Estilo para tela cheia */
 html, body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Impede barras de rolagem desnecessárias */
+    overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Contêiner do relatório em tela cheia */
-#reportContainer {
+/* Aplica o estilo diretamente ao iframe do relatório */
+#reportIframe {
     width: 100%;
     height: 100%;
-    border: none; /* Remove a borda */
+    border: none;
 }
 
-/* Botão de Download posicionado no canto superior direito */
+/* Botão de Download (sem alterações, continua posicionado no canto) */
 #downloadButton {
     position: absolute;
     top: 20px;
     right: 20px;
-    z-index: 1000; /* Garante que o botão fique acima do relatório */
-    
+    z-index: 1000;
     background-color: #0a3c3c;
     color: white;
     border: 1px solid white;
@@ -41,4 +39,5 @@ html, body {
     background-color: #1a5959;
     transform: scale(1.05);
 }
+
 
