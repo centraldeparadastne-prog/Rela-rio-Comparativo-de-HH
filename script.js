@@ -1,54 +1,58 @@
 // Aguarda o carregamento completo da janela, incluindo todos os scripts.
 window.onload = function() {
-    const targetPageName = "Print";
+    // DEIXE ESTA LINHA COMO ESTÁ POR ENQUANTO. VAMOS AJUSTAR DEPOIS.
+    const targetPageName = "Print"; 
 
     const reportIframe = document.getElementById('reportIframe');
     const downloadButton = document.getElementById('downloadButton');
 
-    // Verifica se os elementos essenciais existem
     if (!reportIframe || !downloadButton) {
         console.error("Elemento essencial (iframe ou botão) não encontrado.");
         return;
     }
 
-    // Inicializa o controle do Power BI sobre o iframe existente
     const report = powerbi.get(reportIframe);
 
-    // Se o relatório não for inicializado corretamente, ele não pode ser controlado.
-    // Isso pode acontecer se o iframe não carregar.
     if (!report) {
-        console.error("Não foi possível obter o controle do relatório do Power BI. O iframe carregou corretamente?");
+        console.error("Não foi possível obter o controle do relatório do Power BI.");
         return;
     }
 
-    // Função para verificar a página ativa e atualizar o botão
-    const checkActivePage = async () => {
-        try {
-            const pages = await report.getPages();
-            if (pages) {
-                const activePage = pages.find(p => p.isActive);
-                if (activePage && activePage.displayName === targetPageName) {
-                    downloadButton.style.display = 'flex';
-                } else {
-                    downloadButton.style.display = 'none';
-                }
+    const checkActivePage = async (page) => {
+        // Se a função for chamada sem um objeto 'page', busca a página ativa.
+        let currentPage = page;
+        if (!currentPage) {
+            try {
+                const pages = await report.getPages();
+                currentPage = pages.find(p => p.isActive);
+            } catch (error) {
+                console.error("Erro ao buscar páginas:", error);
+                return; // Sai da função se não conseguir buscar as páginas
             }
-        } catch (error) {
-            console.error("Erro ao verificar a página ativa:", error);
-            // Se houver erro (ex: o relatório ainda não carregou), esconde o botão por segurança.
-            downloadButton.style.display = 'none';
+        }
+
+        if (currentPage) {
+            // !!! PONTO DE DEBURAÇÃO !!!
+            // Este alerta vai mostrar o nome exato da página atual.
+            alert("Você está na página: '" + currentPage.displayName + "'");
+
+            if (currentPage.displayName === targetPageName) {
+                downloadButton.style.display = 'flex';
+            } else {
+                downloadButton.style.display = 'none';
+            }
         }
     };
 
     // --- Event Listeners ---
 
-    // 1. Quando o relatório terminar de renderizar, verifique a página.
-    report.on('rendered', checkActivePage);
+    // Quando o relatório terminar de renderizar, chama a função para a página inicial.
+    report.on('rendered', () => checkActivePage());
 
-    // 2. Quando o usuário mudar de página, verifique novamente.
-    report.on('pageChanged', checkActivePage);
+    // Quando o usuário mudar de página, o objeto 'page' é passado pelo evento.
+    report.on('pageChanged', (event) => checkActivePage(event.detail.newPage));
 
-    // 3. Ação de clique no botão de download
+    // Ação de clique no botão de download (sem alterações)
     downloadButton.addEventListener('click', function() {
         console.log("Botão de download clicado.");
         if (window.html2canvas) {
@@ -70,7 +74,6 @@ window.onload = function() {
         }
     });
 
-    // 4. Tratamento de erros do Power BI
     report.on("error", function(event) {
         console.error("Power BI Error:", event.detail);
     });
