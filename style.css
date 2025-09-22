@@ -5,38 +5,36 @@ html, body {
     height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f0f0;
 }
 
+/* O relatório agora ocupa a parte de cima da tela */
 #reportContainer {
     width: 100%;
-    height: 100%;
-    border: none;
+    height: 75vh; /* 75% da altura da tela */
+    border-bottom: 2px solid #333;
 }
 
-#downloadButton {
+/* Estilo da caixa de diagnóstico */
+#debug-output {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    background-color: #0a3c3c;
-    color: white;
-    border: 1px solid white;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 25vh; /* 25% da altura da tela */
+    background-color: #1e1e1e;
+    color: #00ff00; /* Verde, como um terminal */
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto; /* Adiciona barra de rolagem se o texto for longo */
+    font-family: 'Courier New', Courier, monospace;
 }
 
-#downloadButton:hover {
-    background-color: #1a5959;
-    transform: scale(1.05);
+#debug-output h2 {
+    margin-top: 0;
+    color: white;
 }
+
 
 
 

@@ -1,29 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
-    // --- Configurações ---
-    const baseUrl = "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9";
-    const printPageId = "0a22b9e9f0966a5ee76d"; // O ID INTERNO que você forneceu!
+    const reportContainer = document.getElementById('reportContainer');
+    const debugText = document.getElementById('debug-text');
 
-    // --- Elementos ---
-    const reportContainer = document.getElementById('reportContainer' );
-    const downloadButton = document.getElementById('downloadButton');
-
-    // --- Lógica Principal ---
-    const params = new URLSearchParams(window.location.search);
-    const pageParam = params.get('page');
-
-    let embedUrl;
-
-    // Se a URL do navegador tiver "?page=print", monte a URL do Power BI para a página específica
-    if (pageParam === 'print') {
-        embedUrl = `${baseUrl}&pageName=${printPageId}`;
-        downloadButton.style.display = 'flex'; // Mostra o botão imediatamente
-    } else {
-        // Caso contrário, use a URL base (página inicial do relatório)
-        embedUrl = baseUrl;
-        downloadButton.style.display = 'none'; // Garante que o botão esteja oculto
+    // Função para escrever no nosso "terminal" de diagnóstico
+    function log(message) {
+        console.log(message); // Mantém no console do navegador também
+        debugText.textContent += message + '\n';
     }
 
-    // --- Configuração e Carregamento do Power BI ---
+    log("Script iniciado. Configurando o relatório...");
+
+    const embedUrl = "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9";
+
     const models = window['powerbi-client'].models;
     const config = {
         type: 'report',
@@ -31,32 +19,50 @@ document.addEventListener("DOMContentLoaded", function() {
         embedUrl: embedUrl,
         settings: {
             panes: {
-                filters: { visible: false },
                 pageNavigation: { visible: true, position: models.PageNavigationPosition.Bottom }
             }
         }
     };
 
     // Carrega o relatório
-    const report = powerbi.embed(reportContainer, config);
+    const report = powerbi.embed(reportContainer, config );
 
-    // --- Ação de Download ---
-    downloadButton.addEventListener('click', function() {
-        const reportIframe = reportContainer.querySelector('iframe');
-        if (reportIframe && window.html2canvas) {
-            html2canvas(reportIframe, { useCORS: true, allowTaint: true, logging: true })
-                .then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'captura-relatorio.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                })
-                .catch(error => {
-                    console.error("Erro na captura:", error);
-                    alert("Ocorreu um erro ao gerar a imagem.");
+    // Adiciona um listener para o evento 'error'
+    report.on("error", function(event) {
+        log("--- ERRO NO POWER BI ---");
+        log(JSON.stringify(event.detail, null, 2));
+    });
+
+    // Adiciona um listener para o evento 'rendered' (quando o relatório termina de carregar)
+    report.on("rendered", async function() {
+        log("Relatório 'rendered' (carregado). Tentando obter a lista de páginas...");
+
+        try {
+            // A função getPages() é a chave. Ela retorna um array com todas as páginas.
+            const pages = await report.getPages();
+
+            if (pages && pages.length > 0) {
+                log("--- SUCESSO! PÁGINAS ENCONTRADAS ---");
+                
+                // Itera sobre cada página encontrada e imprime suas propriedades
+                pages.forEach(page => {
+                    log("-------------------------");
+                    log(`Nome de Exibição: ${page.displayName}`);
+                    log(`ID Interno (name): ${page.name}`); // Este é o ID que usamos com &pageName=
                 });
+
+                log("-------------------------");
+                log("\nInstrução: Copie o 'ID Interno (name)' da página que você deseja ('Print') e me envie.");
+
+            } else {
+                log("--- AVISO: Nenhuma página foi retornada pela API. ---");
+            }
+        } catch (error) {
+            log("--- ERRO ao tentar executar report.getPages() ---");
+            log(error.toString());
         }
     });
 });
+
 
 
