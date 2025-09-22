@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnóstico Power BI</title>
+    <title>Comparativo de HH</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Área onde o relatório será carregado -->
-    <div id="reportContainer"></div>
+    <!-- O iframe do Power BI, direto no HTML. Isso garante o carregamento. -->
+    <iframe id="reportIframe" title="CP - Comparativo de HH" 
+            src="https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9" 
+            frameborder="0" allowFullScreen="true">
+    </iframe>
 
-    <!-- Área de diagnóstico para exibir informações -->
-    <div id="debug-output">
-        <h2>Informações de Diagnóstico:</h2>
-        <pre id="debug-text">Aguardando carregamento do relatório...</pre>
-    </div>
+    <!-- O botão agora é sempre visível. -->
+    <button id="downloadButton">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="bi bi-camera-fill"><path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/><path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/></svg>
+        Salvar Imagem
+    </button>
 
-    <!-- Scripts no final -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/powerbi-client/2.22.3/powerbi.min.js"></script>
+    <!-- Scripts necessários apenas para o botão de download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
 </body>

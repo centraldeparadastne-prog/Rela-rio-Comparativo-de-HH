@@ -1,68 +1,36 @@
+// Aguarda o DOM estar pronto para garantir que o botão e o iframe existam.
 document.addEventListener("DOMContentLoaded", function() {
-    const reportContainer = document.getElementById('reportContainer');
-    const debugText = document.getElementById('debug-text');
+    const downloadButton = document.getElementById('downloadButton');
+    const reportIframe = document.getElementById('reportIframe');
 
-    // Função para escrever no nosso "terminal" de diagnóstico
-    function log(message) {
-        console.log(message); // Mantém no console do navegador também
-        debugText.textContent += message + '\n';
+    // Se os elementos não existirem, não faz nada.
+    if (!downloadButton || !reportIframe) {
+        console.error("Botão ou Iframe não encontrado.");
+        return;
     }
 
-    log("Script iniciado. Configurando o relatório...");
-
-    const embedUrl = "https://app.powerbi.com/view?r=eyJrIjoiMWViMDBkYTktNDA1MC00YzIxLWJkY2QtNTBiN2U2NDM4NGU3IiwidCI6IjNjYzQ2MDVjLWJlY2ItNGZhOC1iMmVjLTlhY2E2YzBmMjE5YSJ9";
-
-    const models = window['powerbi-client'].models;
-    const config = {
-        type: 'report',
-        tokenType: models.TokenType.Embed,
-        embedUrl: embedUrl,
-        settings: {
-            panes: {
-                pageNavigation: { visible: true, position: models.PageNavigationPosition.Bottom }
-            }
-        }
-    };
-
-    // Carrega o relatório
-    const report = powerbi.embed(reportContainer, config );
-
-    // Adiciona um listener para o evento 'error'
-    report.on("error", function(event) {
-        log("--- ERRO NO POWER BI ---");
-        log(JSON.stringify(event.detail, null, 2));
-    });
-
-    // Adiciona um listener para o evento 'rendered' (quando o relatório termina de carregar)
-    report.on("rendered", async function() {
-        log("Relatório 'rendered' (carregado). Tentando obter a lista de páginas...");
-
-        try {
-            // A função getPages() é a chave. Ela retorna um array com todas as páginas.
-            const pages = await report.getPages();
-
-            if (pages && pages.length > 0) {
-                log("--- SUCESSO! PÁGINAS ENCONTRADAS ---");
-                
-                // Itera sobre cada página encontrada e imprime suas propriedades
-                pages.forEach(page => {
-                    log("-------------------------");
-                    log(`Nome de Exibição: ${page.displayName}`);
-                    log(`ID Interno (name): ${page.name}`); // Este é o ID que usamos com &pageName=
-                });
-
-                log("-------------------------");
-                log("\nInstrução: Copie o 'ID Interno (name)' da página que você deseja ('Print') e me envie.");
-
-            } else {
-                log("--- AVISO: Nenhuma página foi retornada pela API. ---");
-            }
-        } catch (error) {
-            log("--- ERRO ao tentar executar report.getPages() ---");
-            log(error.toString());
+    // Adiciona o evento de clique ao botão.
+    downloadButton.addEventListener('click', function() {
+        // Verifica se a biblioteca html2canvas foi carregada.
+        if (window.html2canvas) {
+            html2canvas(reportIframe, {
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'captura-relatorio.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error("Erro na captura:", error);
+                alert("Ocorreu um erro ao gerar a imagem.");
+            });
+        } else {
+            alert("Erro: A biblioteca de captura de tela não foi carregada.");
         }
     });
 });
+
 
 
 
